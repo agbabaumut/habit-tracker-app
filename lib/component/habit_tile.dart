@@ -18,14 +18,14 @@ class HabitTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(24.0),
         decoration: BoxDecoration(
-          color: Colors.grey[200],
+          color: Colors.grey[300],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
             Checkbox(
               value: habitCompleted,
-              onChanged:onChanged,
+              onChanged: onChanged,
             ),
             Text(habitName),
           ],
