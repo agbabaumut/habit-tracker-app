@@ -51,22 +51,55 @@ class _HomePageState extends State<HomePage> {
         });
   }
 
+  void openHabitSettings(int index) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return EnterNewHabit(
+            controller: _newHabitController,
+            onsave: () {
+              saveExistingHabit(index);
+            },
+            cancel: cancelNewHabit,
+          );
+        });
+  }
+
+  void saveExistingHabit(int index) {
+    setState(() {
+      todaysHabitList[index][0] = _newHabitController.text;
+    });
+    _newHabitController.clear();
+    Navigator.of(context).pop();
+  }
+
+  void deleteHabit(index) {
+    setState(() {
+      todaysHabitList.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        floatingActionButton: MyFloatActionButton(
-          onPressed: createNewHabit,
-        ),
-        backgroundColor: Colors.grey[500],
-        body: ListView.builder(
-            itemCount: todaysHabitList.length,
-            itemBuilder: ((context, index) {
-              return HabitTile(
-                  habitName: todaysHabitList[index][0],
-                  habitCompleted: todaysHabitList[index][1],
-                  onChanged: (value) {
-                    checkBoxTapped(value, index);
-                  });
-            })));
+      floatingActionButton: MyFloatActionButton(
+        onPressed: createNewHabit,
+      ),
+      backgroundColor: Colors.grey[500],
+      body: ListView.builder(
+        itemCount: todaysHabitList.length,
+        itemBuilder: ((context, index) {
+          return HabitTile(
+            habitName: todaysHabitList[index][0],
+            habitCompleted: todaysHabitList[index][1],
+            settingsTapped: (context) => openHabitSettings(index),
+            deleteTapped: (context) => deleteHabit(index),
+            onChanged: (value) {
+              checkBoxTapped(value, index);
+            },
+          );
+        }),
+      ),
+    );
   }
 }
