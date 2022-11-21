@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:habit_tracker_app/component/monthly_summary.dart';
 import 'package:habit_tracker_app/component/my_fab.dart';
 import 'package:habit_tracker_app/component/new_habit_box.dart';
+import 'package:habit_tracker_app/data/habit_database.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../component/habit_tile.dart';
 
@@ -12,30 +15,41 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List todaysHabitList = [
-    // ["Habit Name", bool value];
-    ["Morning Routine", false],
-    ["Workout B ", false],
-    ["Meditating ", false],
-    ["some things to do", false]
-  ];
+  HabitDatabase db = HabitDatabase();
+
+  final _myBox = Hive.box("Habit_database");
+
+  @override
+  void initState() {
+    if (_myBox.get("CURRENT_HABIT_LIST") == null) {
+      db.createData();
+    } else {
+      db.loadData();
+    }
+    db.updateData();
+
+    super.initState();
+  }
 
   void checkBoxTapped(bool? value, int index) {
     setState(() {
-      todaysHabitList[index][1] = value;
+      db.todaysHabitList[index][1] = value;
+      db.updateData();
     });
   }
 
   void saveNewHabit() {
     setState(() {
-      todaysHabitList.add([_newHabitController.text, false]);
+      db.todaysHabitList.add([_newHabitController.text, false]);
     });
     cancelNewHabit();
+    db.updateData();
   }
 
   void cancelNewHabit() {
     Navigator.of(context).pop();
     _newHabitController.clear();
+    db.updateData();
   }
 
   final _newHabitController = TextEditingController();
@@ -49,6 +63,7 @@ class _HomePageState extends State<HomePage> {
             onsave: saveNewHabit,
           );
         });
+    db.updateData();
   }
 
   void openHabitSettings(int index) {
@@ -63,43 +78,52 @@ class _HomePageState extends State<HomePage> {
             cancel: cancelNewHabit,
           );
         });
+    db.updateData();
   }
 
   void saveExistingHabit(int index) {
     setState(() {
-      todaysHabitList[index][0] = _newHabitController.text;
+      db.todaysHabitList[index][0] = _newHabitController.text;
     });
     _newHabitController.clear();
     Navigator.of(context).pop();
+    db.updateData();
   }
 
   void deleteHabit(index) {
     setState(() {
-      todaysHabitList.removeAt(index);
+      db.todaysHabitList.removeAt(index);
     });
+    db.updateData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      floatingActionButton: MyFloatActionButton(
-        onPressed: createNewHabit,
-      ),
-      backgroundColor: Colors.grey[500],
-      body: ListView.builder(
-        itemCount: todaysHabitList.length,
-        itemBuilder: ((context, index) {
-          return HabitTile(
-            habitName: todaysHabitList[index][0],
-            habitCompleted: todaysHabitList[index][1],
-            settingsTapped: (context) => openHabitSettings(index),
-            deleteTapped: (context) => deleteHabit(index),
-            onChanged: (value) {
-              checkBoxTapped(value, index);
-            },
-          );
-        }),
-      ),
-    );
+        appBar: AppBar(),
+        floatingActionButton: MyFloatActionButton(
+          onPressed: createNewHabit,
+        ),
+        backgroundColor: Colors.blue[500],
+        body: ListView(
+          children: [
+            MonthlySummary(datasets: db.heatMapDataSet, startDate: _myBox.get("START_DATE")),
+            ListView.builder(
+              shrinkWrap: true,
+              itemCount: db.todaysHabitList.length,
+              itemBuilder: ((context, index) {
+                return HabitTile(
+                  habitName: db.todaysHabitList[index][0],
+                  habitCompleted: db.todaysHabitList[index][1],
+                  settingsTapped: (context) => openHabitSettings(index),
+                  deleteTapped: (context) => deleteHabit(index),
+                  onChanged: (value) {
+                    checkBoxTapped(value, index);
+                  },
+                );
+              }),
+            ),
+          ],
+        ));
   }
 }
